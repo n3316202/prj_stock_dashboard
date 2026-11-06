@@ -1,0 +1,4 @@
+PyQt6>=6.6
+yfinance>=0.2.50
+pandas>=2.0
+qasync>=0.27
