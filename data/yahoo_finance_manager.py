@@ -4,7 +4,7 @@ Yahoo Finance 데이터 수집기 + 실시간 갱신 디버깅
 
 기능
 1. 1분봉: 최근 가격 조회
-2. 1년 일봉: 전일 종가, 52주 최고가, 거래량 조회
+2. 전체 기간 일봉: 전일 종가, 역사적 신고가, 거래량 조회
 3. 여러 티커를 묶어서 다운로드
 4. 15분 일봉 캐시
 5. ETF 가격 갱신 여부 추적
@@ -282,7 +282,7 @@ class YahooFinanceManager:
 
         log.debug(
             "[DETAIL] %s | previous_close=%s | "
-            "52w_high=%s | volume=%s | "
+            "all_time_high=%s | volume=%s | "
             "price_changed=%s",
             display_name,
             item["previous_close"],
@@ -381,7 +381,7 @@ class YahooFinanceManager:
             intraday_all = pd.DataFrame()
 
         # ====================================================
-        # 2. 1년 일봉 다운로드 및 캐시
+        # 2. 전체 기간 일봉 다운로드 및 캐시
         # ====================================================
 
         now_monotonic = time.monotonic()
@@ -401,7 +401,7 @@ class YahooFinanceManager:
 
                 daily_all = yf.download(
                     tickers=symbols,
-                    period="1y",
+                    period="max",
                     interval="1d",
                     group_by="ticker",
                     auto_adjust=False,
@@ -426,7 +426,7 @@ class YahooFinanceManager:
                     self._daily_cache_time = time.monotonic()
 
                     log.info(
-                        "[DAILY] 일봉 갱신 완료 | "
+                        "[DAILY] 전체 기간 일봉 갱신 완료 | "
                         "소요시간=%.2f초",
                         time.perf_counter() - daily_start
                     )
@@ -658,10 +658,10 @@ class YahooFinanceManager:
             ) * 100
 
         # ----------------------------------------
-        # 52주 최고가
+        # 역사적 신고가(상장 이후 전체 거래일의 고가 중 최댓값)
         # ----------------------------------------
 
-        high_52w = None
+        historical_high = None
 
         volume = "-"
 
@@ -673,7 +673,7 @@ class YahooFinanceManager:
 
                 if not high_values.empty:
 
-                    high_52w = float(
+                    historical_high = float(
                         high_values.max()
                     )
 
@@ -685,11 +685,11 @@ class YahooFinanceManager:
 
                     volume = f"{int(volumes.iloc[-1]):,}"
 
-        if high_52w is None and "High" in intraday:
+        if historical_high is None and "High" in intraday:
 
             high_values = intraday["High"].dropna()
 
-            high_52w = (
+            historical_high = (
                 float(high_values.max())
                 if not high_values.empty
                 else price
@@ -710,8 +710,8 @@ class YahooFinanceManager:
             ),
 
             "high": (
-                high_52w
-                if high_52w is not None
+                historical_high
+                if historical_high is not None
                 else price
             ),
 
