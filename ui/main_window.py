@@ -106,11 +106,19 @@ QLabel#TickerSymbol {
     font-size: 11pt;
     font-weight: bold;
 }
+/* 역사적 신고가 */
+QLabel#HighPrice {
+    color: #B48CFF;
+    font-size: 11pt;
+    font-weight: bold;
+}
+
 QLabel#Price {
     color: #F2F3F5;
     font-size: 11pt;
     font-weight: bold;
 }
+
 QLabel#DetailSymbol {
     color: #FFFFFF;
     font-size: 22pt;
@@ -500,12 +508,11 @@ class TickerRow(QFrame):
 
         # 상장 이후 역사적 신고가(ATH)
         self.high_label = QLabel()
-        self.high_label.setObjectName("Muted")
+        self.high_label.setObjectName("HighPrice")
         self.high_label.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
-        self.high_label.setStyleSheet("font-size: 9pt; color: #B48CFF;")
-        self.set_high(data.get("high"))
+        self.set_high(data.get("high"), data.get("price"))
 
         price = data.get("price")
         self.price_label = QLabel("--" if price is None else f"${price:,.2f}")
@@ -521,16 +528,30 @@ class TickerRow(QFrame):
         layout.addWidget(self.price_label, 2)
         layout.addWidget(self.change_label, 2)
 
-    def set_high(self, high):
-        """상장 이후 역사적 신고가(ATH)를 표시한다."""
+    def set_high(self, high, current_price):
+        """역사적 최고가와 현재가 기준 고점 대비 하락률 표시"""
+
         try:
-            high_value = float(str(high).replace(",", "")) if high is not None else None
+            high_value = float(high) if high is not None else None
+            price_value = float(current_price) if current_price is not None else None
+
         except (TypeError, ValueError):
             high_value = None
+            price_value = None
+
+        if high_value is None or high_value <= 0:
+            self.high_label.setText("--")
+            return
+
+        if price_value is None:
+            self.high_label.setText(f"${high_value:,.2f} (--)")
+            return
+
+        # 현재가가 역사적 최고가 대비 얼마나 하락했는지 계산
+        drawdown_pct = ((price_value / high_value) - 1) * 100
 
         self.high_label.setText(
-            "--" if high_value is None or high_value <= 0
-            else f"${high_value:,.2f}"
+            f"${high_value:,.2f} ({drawdown_pct:.0f}%)"
         )
 
     def set_change(self, change, pct):
@@ -863,14 +884,14 @@ class MainWindow(QMainWindow):
         column_header.setContentsMargins(12, 0, 12, 0)
 
         for text, stretch in [
-            ("종목 / 상품명", 3),
-            ("역사적 최고가", 2),
+            ("종목/상품명", 3),
+            ("최고가", 2),
             ("현재가", 2),
-            ("등락 / 등락률", 2),
+            ("등락/등락률", 2),
         ]:
             label = QLabel(text)
             label.setObjectName("Muted")
-            if text != "종목 / 상품명":
+            if text != "종목/상품명":
                 label.setAlignment(Qt.AlignmentFlag.AlignRight)
             column_header.addWidget(label, stretch)
 
@@ -1159,7 +1180,7 @@ class MainWindow(QMainWindow):
             old_row.price_label.setText(
                 "--" if current_price is None else f"${current_price:,.2f}"
             )
-            old_row.set_high(TICKER_DATA[symbol].get("high"))
+            old_row.set_high(TICKER_DATA[symbol].get("high"),current_price)
             old_row.set_change(
                 TICKER_DATA[symbol]["change"],
                 TICKER_DATA[symbol]["change_pct"],
