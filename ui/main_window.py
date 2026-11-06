@@ -498,6 +498,15 @@ class TickerRow(QFrame):
         left.addWidget(self.symbol_label)
         left.addWidget(self.name_label)
 
+        # 상장 이후 역사적 신고가(ATH)
+        self.high_label = QLabel()
+        self.high_label.setObjectName("Muted")
+        self.high_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.high_label.setStyleSheet("font-size: 9pt; color: #B48CFF;")
+        self.set_high(data.get("high"))
+
         price = data.get("price")
         self.price_label = QLabel("--" if price is None else f"${price:,.2f}")
         self.price_label.setObjectName("Price")
@@ -508,8 +517,21 @@ class TickerRow(QFrame):
         self.set_change(data["change"], data["change_pct"])
 
         layout.addLayout(left, 3)
+        layout.addWidget(self.high_label, 2)
         layout.addWidget(self.price_label, 2)
         layout.addWidget(self.change_label, 2)
+
+    def set_high(self, high):
+        """상장 이후 역사적 신고가(ATH)를 표시한다."""
+        try:
+            high_value = float(str(high).replace(",", "")) if high is not None else None
+        except (TypeError, ValueError):
+            high_value = None
+
+        self.high_label.setText(
+            "--" if high_value is None or high_value <= 0
+            else f"${high_value:,.2f}"
+        )
 
     def set_change(self, change, pct):
         if change is None or pct is None:
@@ -842,6 +864,7 @@ class MainWindow(QMainWindow):
 
         for text, stretch in [
             ("종목 / 상품명", 3),
+            ("역사적 최고가", 2),
             ("현재가", 2),
             ("등락 / 등락률", 2),
         ]:
@@ -1136,6 +1159,7 @@ class MainWindow(QMainWindow):
             old_row.price_label.setText(
                 "--" if current_price is None else f"${current_price:,.2f}"
             )
+            old_row.set_high(TICKER_DATA[symbol].get("high"))
             old_row.set_change(
                 TICKER_DATA[symbol]["change"],
                 TICKER_DATA[symbol]["change_pct"],
