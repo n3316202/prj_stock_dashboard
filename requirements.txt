@@ -2,3 +2,4 @@ PyQt6>=6.6
 yfinance>=0.2.50
 pandas>=2.0
 qasync>=0.27
+PyQtWebEngine>=5.15.0  # (PyQt5 기준, PySide의 경우 PySide6-Addons 등 환경에 맞춰 추가)

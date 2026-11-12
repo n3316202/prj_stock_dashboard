@@ -1028,19 +1028,19 @@ class MainWindow(QMainWindow):
         )
         chart_frame.setMinimumHeight(150)
 
-        chart_layout = QVBoxLayout(chart_frame)
-        chart_label = QLabel("PRICE CHART")
-        chart_label.setObjectName("Muted")
-        chart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # chart_layout = QVBoxLayout(chart_frame)
+        # chart_label = QLabel("PRICE CHART")
+        # chart_label.setObjectName("Muted")
+        # chart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        chart_hint = QLabel("PyQtGraph 연동 영역")
-        chart_hint.setStyleSheet("color: #5865F2; font-size: 10pt;")
-        chart_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # chart_hint = QLabel("PyQtGraph 연동 영역")
+        # chart_hint.setStyleSheet("color: #5865F2; font-size: 10pt;")
+        # chart_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        chart_layout.addStretch()
-        chart_layout.addWidget(chart_label)
-        chart_layout.addWidget(chart_hint)
-        chart_layout.addStretch()
+        # chart_layout.addStretch()
+        # chart_layout.addWidget(chart_label)
+        # chart_layout.addWidget(chart_hint)
+        # chart_layout.addStretch()
 
         layout.addWidget(chart_frame)
 
