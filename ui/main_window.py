@@ -1221,6 +1221,7 @@ class MainWindow(QMainWindow):
         self.last_update_label.setText(f"마지막 갱신: {now}")
 
     def set_connection_status(self, message, connected=True):
+        print("메세지 나와라",message)
         self.connection_label.setText(("●  " if connected else "●  ") + message)
         self.connection_label.setStyleSheet(
             "color: #23D18B;" if connected else "color: #F23F43;"
