@@ -8,6 +8,15 @@ from PyQt6.QtWidgets import (
 )
 from config import MARKET_DATA, TICKER_DATA, SERVER_CHANNELS
 
+from PyQt6.QtCore import QUrl
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebEngineCore import (
+    QWebEngineProfile,
+    QWebEnginePage,
+    QWebEngineUrlRequestInterceptor
+)
+from PyQt6.QtWebEngineCore import QWebEngineSettings
+
 APP_STYLE = """
 QMainWindow {
     background-color: #313338;
@@ -604,6 +613,35 @@ class InfoValue(QFrame):
         self.value_label.setText(value)
 
 
+from PyQt6.QtWebEngineCore import (
+    QWebEngineUrlRequestInterceptor,
+    QWebEngineProfile,
+    QWebEnginePage,
+    QWebEngineSettings
+)
+
+# Windows에 등록된 앱의 고유 식별자를 사용해야 한다.
+# 아래 값은 예시이므로 실제 앱 ID로 교체해야 한다.
+APP_ID = "com.example.prj_stock_dashboard"
+
+YOUTUBE_REFERER = f"https://{APP_ID}/"
+
+
+class YouTubeRefererInterceptor(QWebEngineUrlRequestInterceptor):
+
+    def interceptRequest(self, info):
+
+        host = info.requestUrl().host().lower()
+
+        if (
+            host.endswith("youtube.com")
+            or host.endswith("youtube-nocookie.com")
+        ):
+            info.setHttpHeader(
+                b"Referer",
+                YOUTUBE_REFERER.encode("utf-8")
+            )
+
 # ============================================================
 # 4. 메인 윈도우
 # ============================================================
@@ -1020,29 +1058,66 @@ class MainWindow(QMainWindow):
         divider2 = QFrame()
         divider2.setObjectName("Divider")
         layout.addWidget(divider2)
+      
+        # ==========================================
+        # 4. 방송 실행
+        # ==========================================
 
-        # 간단한 차트 플레이스홀더
+        # ==========================================
+        # YouTube 방송 영역
+        # ==========================================
+
         chart_frame = QFrame()
-        chart_frame.setStyleSheet(
-            "background-color: #1E1F22; border: 1px solid #3F4147; border-radius: 8px;"
+        chart_frame.setMinimumHeight(220)
+
+        chart_layout = QVBoxLayout(chart_frame)
+        chart_layout.setContentsMargins(0, 0, 0, 0)
+
+        # WebEngine 프로필
+        self.youtube_profile = QWebEngineProfile(self)
+
+        # Referer 인터셉터
+        self.youtube_interceptor = YouTubeRefererInterceptor(
+            self.youtube_profile
         )
-        chart_frame.setMinimumHeight(150)
 
-        # chart_layout = QVBoxLayout(chart_frame)
-        # chart_label = QLabel("PRICE CHART")
-        # chart_label.setObjectName("Muted")
-        # chart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.youtube_profile.setUrlRequestInterceptor(
+            self.youtube_interceptor
+        )
 
-        # chart_hint = QLabel("PyQtGraph 연동 영역")
-        # chart_hint.setStyleSheet("color: #5865F2; font-size: 10pt;")
-        # chart_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # WebEngine 페이지
+        self.youtube_page = QWebEnginePage(
+            self.youtube_profile
+        )
 
-        # chart_layout.addStretch()
-        # chart_layout.addWidget(chart_label)
-        # chart_layout.addWidget(chart_hint)
-        # chart_layout.addStretch()
+        # 영상 화면
+        streaming_view = QWebEngineView(chart_frame)
+        streaming_view.setPage(self.youtube_page)
+
+        streaming_view.settings().setAttribute(
+            QWebEngineSettings.WebAttribute.PlaybackRequiresUserGesture,
+            False
+        )
+
+        # 실제 영상 ID
+        video_id = "WWuCB9y-3FQ"
+
+        # 임베드 주소
+        stream_url = (
+            f"https://www.youtube.com/embed/{video_id}"
+            "?autoplay=0"
+            "&mute=1"
+            "&playsinline=1"
+        )
+
+        streaming_view.setUrl(QUrl(stream_url))
+
+        chart_layout.addWidget(streaming_view)
+
+        self.streaming_view = streaming_view
 
         layout.addWidget(chart_frame)
+
 
         metrics_title = QLabel("PRICE METRICS")
         metrics_title.setObjectName("SectionTitle")
